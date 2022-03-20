@@ -1,0 +1,65 @@
+version: '3'
+services:
+
+  #PHP Service
+  laravel_app:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    image: digitalocean.com/php
+    container_name: laravel_app
+    restart: unless-stopped
+    tty: true
+    environment:
+      SERVICE_NAME: laravel_app
+      SERVICE_TAGS: dev
+    working_dir: /var/www
+    volumes:
+      - ./:/var/www
+      - ./conf/php/local.ini:/usr/local/etc/php/conf.d/local.ini
+    networks:
+      - app-network
+
+  #Nginx Service
+  laravel_webserver:
+    image: nginx:alpine
+    container_name: laravel_webserver
+    restart: unless-stopped
+    tty: true
+    ports:
+      - "8082:80"
+    volumes:
+      - ./:/var/www
+      - ./conf/nginx/logs/:/var/log/nginx/
+      - ./conf/nginx/conf.d/:/etc/nginx/conf.d/
+    networks:
+      - app-network
+
+  #MySQL Service
+  laravel_db:
+    image: mysql:5.7.22
+    container_name: laravel_db
+    restart: unless-stopped
+    tty: true
+    ports:
+      - "33061:3306"
+    environment:
+      MYSQL_DATABASE: my_db
+      MYSQL_ROOT_PASSWORD: P*yUC@wIYxjr
+      SERVICE_TAGS: dev
+      SERVICE_NAME: laravel_db
+    volumes:
+      - ./data/dbdata:/var/lib/mysql/
+      - ./conf/mysql/my.cnf:/etc/mysql/my.cnf
+    networks:
+      - app-network
+
+#Docker Networks
+networks:
+  app-network:
+    driver: bridge
+
+#Volumes
+volumes:
+  dbdata:
+    driver: local
